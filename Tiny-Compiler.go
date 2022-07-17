@@ -165,6 +165,8 @@ func walk() node {
 	return node{}
 }
 
+// The Traverser
+
 type visitor map[string]func(n *node, p node)
 
 func traverser(a ast, v visitor) {
@@ -196,4 +198,47 @@ func traverseNode(n, p node, v visitor) {
 	default:
 		log.Fatal(n.kind)
 	}
+}
+
+// The Transformer
+
+func transformer(a ast) ast {
+	nast := ast{
+		kind: "Program",
+		body: []node{},
+	}
+
+	a.context = &nast.body
+	traverser(a, map[string]func(n *node, p node){
+		"NumberLiteral": func(n *node, p node) {
+			*p.context = append(*p.context, node{
+				kind:  "NumberLiteral",
+				value: n.value,
+			})
+		},
+
+		"CallExpression": func(n *node, p node) {
+			e := node{
+				kind: "CallExpression",
+				callee: &node{
+					kind: "Identifier",
+					name: n.name,
+				},
+				arguments: new([]node),
+			}
+
+			n.context = e.arguments
+			if p.kind != "CallExpression" {
+				es := node{
+					kind:       "ExpressionStatement",
+					expression: &e,
+				}
+
+				*p.context = append(*p.context, es)
+			} else {
+				*p.context = append(*p.context, e)
+			}
+		},
+	})
+	return nast
 }
