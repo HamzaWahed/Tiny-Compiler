@@ -1,6 +1,9 @@
 package main
 
-import "log"
+import (
+	"log"
+	"strings"
+)
 
 // The Tokenizer
 // (add 2 (subtract 4 2)) => [{ type: 'paren', value: '(' }, ...]
@@ -241,4 +244,40 @@ func transformer(a ast) ast {
 		},
 	})
 	return nast
+}
+
+// The Code Generator
+
+func codeGenerator(n node) string {
+	switch n.kind {
+	case "Program":
+		var r []string
+		for _, no := range n.body {
+			r = append(r, codeGenerator(no))
+		}
+		return strings.Join(r, "\n")
+
+	case "ExpressionStatement":
+		return codeGenerator(*n.expression) + ";"
+
+	case "CallExpression":
+		var ra []string
+		c := codeGenerator(*n.callee)
+		for _, no := range *n.arguments {
+			ra = append(ra, codeGenerator(no))
+		}
+
+		r := strings.Join(ra, ", ")
+		return c + "(" + r + ")"
+
+	case "Identifier":
+		return n.name
+
+	case "NumberLiteral":
+		return n.value
+
+	default:
+		log.Fatal("err")
+		return ""
+	}
 }
