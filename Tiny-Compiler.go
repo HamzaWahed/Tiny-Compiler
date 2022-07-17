@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"strings"
 )
@@ -280,4 +281,26 @@ func codeGenerator(n node) string {
 		log.Fatal("err")
 		return ""
 	}
+}
+
+// The Compiler
+/*
+	1. input => tokenizer => tokens
+	2. tokens => parser => ast
+	3. ast => transformer => newAst
+	4. newAst => generator => output
+*/
+
+func compiler(input string) string {
+	tokens := tokenizer(input)
+	ast := parser(tokens)
+	nast := transformer(ast)
+	out := codeGenerator(node(nast))
+	return out
+}
+
+func main() {
+	program := "(add 10 (subtract 10 6))"
+	out := compiler(program)
+	fmt.Println(out)
 }
