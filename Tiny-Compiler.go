@@ -1,13 +1,9 @@
 package main
 
+import "log"
+
 // The Tokenizer
 // (add 2 (subtract 4 2)) => [{ type: 'paren', value: '(' }, ...]
-
-//import (
-//	"fmt"
-//	"log"
-//	"strings"
-//)
 
 type token struct {
 	kind  string
@@ -98,4 +94,73 @@ func isLetter(char string) bool {
 		return true
 	}
 	return false
+}
+
+// The Parser
+// [{type: 'paren', value: '('}, ... }] => {type: 'Program', body: [...]}
+
+type node struct {
+	kind       string
+	value      string
+	name       string
+	callee     *node
+	expression *node
+	body       []node
+	params     []node
+	arguments  *[]node
+	context    *[]node
+}
+
+type ast node
+
+var pc int
+var pt []token
+
+func parser(tokens []token) ast {
+	pc = 0
+	pt = tokens
+
+	ast := ast{
+		kind: "Program",
+		body: []node{},
+	}
+
+	for pc < len(pt) {
+		ast.body = append(ast.body, walk())
+	}
+	return ast
+}
+
+func walk() node {
+	token := pt[pc]
+	if token.kind == "number" {
+		pc++
+		return node{
+			kind:  "NumberLiteral",
+			value: token.value,
+		}
+	}
+
+	if token.kind == "paren" && token.value == "(" {
+		pc++
+		token = pt[pc]
+		n := node{
+			kind:   "CallExpression",
+			name:   token.value,
+			params: []node{},
+		}
+
+		pc++
+		token = pt[pc]
+
+		for token.kind != "paren" || (token.kind == "paren" && token.value != ")") {
+			n.params = append(n.params, walk())
+			token = pt[pc]
+		}
+
+		pc++
+		return n
+	}
+	log.Fatal(token.kind)
+	return node{}
 }
