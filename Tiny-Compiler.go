@@ -164,3 +164,36 @@ func walk() node {
 	log.Fatal(token.kind)
 	return node{}
 }
+
+type visitor map[string]func(n *node, p node)
+
+func traverser(a ast, v visitor) {
+	traverseNode(node(a), node{}, v)
+}
+
+func traverseArray(a []node, p node, v visitor) {
+	for _, child := range a {
+		traverseNode(child, p, v)
+	}
+}
+
+func traverseNode(n, p node, v visitor) {
+	for k, va := range v {
+		if k == n.kind {
+			va(&n, p)
+		}
+	}
+
+	switch n.kind {
+	case "Program":
+		traverseArray(n.body, n, v)
+		break
+	case "CallExpression":
+		traverseArray(n.params, n, v)
+		break
+	case "NumberLiteral":
+		break
+	default:
+		log.Fatal(n.kind)
+	}
+}
